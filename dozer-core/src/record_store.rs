@@ -250,48 +250,50 @@ impl RecordWriter for PrimaryKeyLookupRecordWriter {
         op: Operation,
         tx: &SharedTransaction,
     ) -> Result<Operation, ExecutionError> {
-        match op {
-            Operation::Insert { mut new } => {
-                let key = new.get_key(&self.schema.primary_index);
-                self.write_versioned_record(
-                    Some(&new),
-                    key,
-                    INITIAL_RECORD_VERSION,
-                    &self.schema,
-                    tx,
-                )?;
-                new.version = Some(INITIAL_RECORD_VERSION);
-                Ok(Operation::Insert { new })
-            }
-            Operation::Delete { mut old } => {
-                let key = old.get_key(&self.schema.primary_index);
-                let curr_version = self.get_last_record_version(&key, tx)?;
-                if self.retr_old_records_for_deletes {
-                    old = self
-                        .retr_versioned_record(key.to_owned(), curr_version, tx)?
-                        .ok_or_else(RecordNotFound)?;
-                }
-                self.push_pop_retention_queue(key.clone(), curr_version, tx)?;
-                self.write_versioned_record(None, key, curr_version + 1, &self.schema, tx)?;
-                old.version = Some(curr_version);
-                Ok(Operation::Delete { old })
-            }
-            Operation::Update { mut old, mut new } => {
-                let key = old.get_key(&self.schema.primary_index);
-                let curr_version = self.get_last_record_version(&key, tx)?;
-                if self.retr_old_records_for_updates {
-                    old = self
-                        .retr_versioned_record(key.to_owned(), curr_version, tx)?
-                        .ok_or_else(RecordNotFound)?;
-                }
-                self.push_pop_retention_queue(key.clone(), curr_version, tx)?;
-                self.write_versioned_record(Some(&new), key, curr_version + 1, &self.schema, tx)?;
-                old.version = Some(curr_version);
-                new.version = Some(curr_version + 1);
-                Ok(Operation::Update { old, new })
-            }
-        }
+        Ok(op)
     }
+    //     match op {
+    //         Operation::Insert { mut new } => {
+    //             let key = new.get_key(&self.schema.primary_index);
+    //             self.write_versioned_record(
+    //                 Some(&new),
+    //                 key,
+    //                 INITIAL_RECORD_VERSION,
+    //                 &self.schema,
+    //                 tx,
+    //             )?;
+    //             new.version = Some(INITIAL_RECORD_VERSION);
+    //             Ok(Operation::Insert { new })
+    //         }
+    //         Operation::Delete { mut old } => {
+    //             let key = old.get_key(&self.schema.primary_index);
+    //             let curr_version = self.get_last_record_version(&key, tx)?;
+    //             if self.retr_old_records_for_deletes {
+    //                 old = self
+    //                     .retr_versioned_record(key.to_owned(), curr_version, tx)?
+    //                     .ok_or_else(RecordNotFound)?;
+    //             }
+    //             self.push_pop_retention_queue(key.clone(), curr_version, tx)?;
+    //             self.write_versioned_record(None, key, curr_version + 1, &self.schema, tx)?;
+    //             old.version = Some(curr_version);
+    //             Ok(Operation::Delete { old })
+    //         }
+    //         Operation::Update { mut old, mut new } => {
+    //             let key = old.get_key(&self.schema.primary_index);
+    //             let curr_version = self.get_last_record_version(&key, tx)?;
+    //             if self.retr_old_records_for_updates {
+    //                 old = self
+    //                     .retr_versioned_record(key.to_owned(), curr_version, tx)?
+    //                     .ok_or_else(RecordNotFound)?;
+    //             }
+    //             self.push_pop_retention_queue(key.clone(), curr_version, tx)?;
+    //             self.write_versioned_record(Some(&new), key, curr_version + 1, &self.schema, tx)?;
+    //             old.version = Some(curr_version);
+    //             new.version = Some(curr_version + 1);
+    //             Ok(Operation::Update { old, new })
+    //         }
+    //     }
+    // }
 }
 
 #[derive(Debug, Clone)]
@@ -408,25 +410,27 @@ impl RecordWriter for AutogenRowKeyLookupRecordWriter {
         op: Operation,
         tx: &SharedTransaction,
     ) -> Result<Operation, ExecutionError> {
-        match op {
-            Operation::Insert { mut new } => {
-                let ctr = self.get_autogen_counter(tx)?;
-                new.values.push(Field::UInt(ctr));
-                assert!(
-                    self.schema.primary_index.len() == 1
-                        && self.schema.primary_index[0] == new.values.len() - 1
-                );
-                self.write_record(&new, &self.schema, tx)?;
-                new.version = Some(INITIAL_RECORD_VERSION);
-                Ok(Operation::Insert { new })
-            }
-            Operation::Update { .. } => Err(UnsupportedUpdateOperation(
-                "AutogenRowsIdLookupRecordWriter does not support update operations".to_string(),
-            )),
-            Operation::Delete { .. } => Err(UnsupportedDeleteOperation(
-                "AutogenRowsIdLookupRecordWriter does not support delete operations".to_string(),
-            )),
-        }
+        Ok(op)
+
+        // match op {
+        //     Operation::Insert { mut new } => {
+        //         let ctr = self.get_autogen_counter(tx)?;
+        //         new.values.push(Field::UInt(ctr));
+        //         assert!(
+        //             self.schema.primary_index.len() == 1
+        //                 && self.schema.primary_index[0] == new.values.len() - 1
+        //         );
+        //         self.write_record(&new, &self.schema, tx)?;
+        //         new.version = Some(INITIAL_RECORD_VERSION);
+        //         Ok(Operation::Insert { new })
+        //     }
+        //     Operation::Update { .. } => Err(UnsupportedUpdateOperation(
+        //         "AutogenRowsIdLookupRecordWriter does not support update operations".to_string(),
+        //     )),
+        //     Operation::Delete { .. } => Err(UnsupportedDeleteOperation(
+        //         "AutogenRowsIdLookupRecordWriter does not support delete operations".to_string(),
+        //     )),
+        // }
     }
 }
 

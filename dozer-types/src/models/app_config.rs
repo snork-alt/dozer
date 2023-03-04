@@ -86,15 +86,15 @@ pub fn default_app_max_map_size() -> u64 {
 }
 
 pub fn default_app_buffer_size() -> u32 {
-    20_000
+    1_000_000
 }
 
 pub fn default_commit_size() -> u32 {
-    10_000
+    1_000_000
 }
 
 pub fn default_commit_timeout() -> u64 {
-    50
+    50 * 1000
 }
 
 impl<'de> Deserialize<'de> for Config {

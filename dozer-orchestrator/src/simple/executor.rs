@@ -8,6 +8,7 @@ use std::collections::HashMap;
 use std::path::Path;
 use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
+use std::time::Duration;
 
 use dozer_types::models::source::Source;
 
@@ -89,11 +90,15 @@ impl<'a> Executor<'a> {
         app.add_pipeline(pipeline);
 
         let dag = app.get_dag().map_err(OrchestrationError::ExecutionError)?;
-        let exec = DagExecutor::new(
-            dag.clone(),
-            self.pipeline_dir.to_path_buf(),
-            ExecutorOptions::default(),
-        )?;
+
+        let mut opts = ExecutorOptions {
+            commit_sz: 1_000_000,
+            channel_buffer_sz: 1_000_000,
+            commit_time_threshold: Duration::from_millis(25_000),
+            max_map_size: 1024 * 1024 * 1024 * 1024,
+        };
+
+        let exec = DagExecutor::new(dag.clone(), self.pipeline_dir.to_path_buf(), opts)?;
 
         exec.start(self.running.clone())?;
         Ok(dag)

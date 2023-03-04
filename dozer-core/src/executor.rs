@@ -11,7 +11,7 @@ use dozer_types::types::Operation;
 use crate::epoch::Epoch;
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
-use std::fmt::Debug;
+use std::fmt::{Debug, Display};
 use std::panic::panic_any;
 use std::path::PathBuf;
 use std::sync::atomic::AtomicBool;
@@ -20,7 +20,7 @@ use std::thread::JoinHandle;
 use std::thread::{self, Builder};
 use std::time::Duration;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct ExecutorOptions {
     pub commit_sz: u32,
     pub channel_buffer_sz: usize,
@@ -32,9 +32,9 @@ pub struct ExecutorOptions {
 impl Default for ExecutorOptions {
     fn default() -> Self {
         Self {
-            commit_sz: 10_000,
-            channel_buffer_sz: 20_000,
-            commit_time_threshold: Duration::from_millis(50),
+            commit_sz: 1_000_000,
+            channel_buffer_sz: 1_000_000,
+            commit_time_threshold: Duration::from_millis(60_000),
             max_map_size: 1024 * 1024 * 1024 * 1024,
         }
     }
@@ -86,6 +86,8 @@ impl DagExecutor {
     ) -> Result<Self, ExecutionError> {
         let dag_schemas = DagSchemas::new(dag)?;
         let builder_dag = BuilderDag::new(dag_schemas, path, options.max_map_size)?;
+
+        println!("{:?}", options);
 
         Ok(Self {
             builder_dag,
