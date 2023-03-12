@@ -70,11 +70,21 @@ curl --create-dirs -o data/trips/fhvhv_tripdata_2022-01.parquet https://d37ci6vz
 dozer -c dozer-config.yaml
 ```
 
-Dozer will start processing the data and populating the cache. You can see a progress of the execution from teh console.
+Dozer will start processing the data and populating the cache. You can see a progress of the execution from the console.
 
 **Query the APIs**
 
-The easiest way to query Dozer cache is using gRPC APIs is to use [Postman](https://www.postman.com/). Point your Postman gRPC address to `localhost:50051` and start querying the Dozer cache.
+You can query the data using the gRPC or REST
+
+```bash
+# gRPC
+grpcurl -d '{"query": "{\"$limit\": 1}"}' -plaintext localhost:50051 dozer.generated.trips_cache.TripsCaches/query
+
+# REST
+curl -X POST  http://localhost:8080/trips/query --header 'Content-Type: application/json' --data-raw '{"$limit":3}'
+```
+
+If you prefer, you can use [Postman](https://www.postman.com/). Point your Postman gRPC address to `localhost:50051` and start querying the Dozer cache. Dozer exposes gRPC reflection metadata for caches discovery.
 
 ![postman query](images/postman.png)
 
